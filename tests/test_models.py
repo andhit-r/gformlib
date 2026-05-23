@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from gformlib.models import FormConfig, FormInfo, QuestionConfig, QuestionType
 
 

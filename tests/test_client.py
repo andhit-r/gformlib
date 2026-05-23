@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from googleapiclient.errors import HttpError
@@ -17,7 +16,6 @@ from gformlib.exceptions import (
     InvalidConfigError,
 )
 from gformlib.models import FormInfo
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -103,9 +101,7 @@ class TestFromServiceAccountInfo:
             ),
             patch("gformlib.client.build", return_value=mock_service),
         ):
-            client = GoogleFormsClient.from_service_account_info(
-                {"type": "service_account"}
-            )
+            client = GoogleFormsClient.from_service_account_info({"type": "service_account"})
         assert isinstance(client, GoogleFormsClient)
 
     def test_invalid_info_raises(self) -> None:
@@ -126,9 +122,7 @@ class TestFromServiceAccountInfo:
 class TestCreateForm:
     """Tests for :meth:`GoogleFormsClient.create_form`."""
 
-    def _setup_service(
-        self, mock_service, create_response, batch_response=None
-    ) -> None:
+    def _setup_service(self, mock_service, create_response, batch_response=None) -> None:
         """Wire the mock service to return the given responses."""
         create_mock = MagicMock()
         create_mock.execute.return_value = create_response
@@ -148,17 +142,13 @@ class TestCreateForm:
         assert isinstance(info, FormInfo)
         assert info.form_id == "abc123"
 
-    def test_responder_uri_is_set(
-        self, client, mock_service, fake_create_response
-    ) -> None:
+    def test_responder_uri_is_set(self, client, mock_service, fake_create_response) -> None:
         """responder_uri is populated from the API response."""
         self._setup_service(mock_service, fake_create_response)
         info = client.create_form({"title": "Test Form"})
         assert info.responder_uri == "https://docs.google.com/forms/d/abc123/viewform"
 
-    def test_accepts_form_config_object(
-        self, client, mock_service, fake_create_response
-    ) -> None:
+    def test_accepts_form_config_object(self, client, mock_service, fake_create_response) -> None:
         """create_form accepts a FormConfig object, not just a dict."""
         from gformlib.utils import parse_form_config
 
@@ -193,12 +183,10 @@ class TestCreateForm:
         with pytest.raises(InvalidConfigError):
             client.create_form({"description": "No title"})
 
-    def test_api_error_on_create_raises_form_creation_error(
-        self, client, mock_service
-    ) -> None:
+    def test_api_error_on_create_raises_form_creation_error(self, client, mock_service) -> None:
         """An HttpError from forms().create() is wrapped in FormCreationError."""
-        mock_service.forms.return_value.create.return_value.execute.side_effect = (
-            _make_http_error(500)
+        mock_service.forms.return_value.create.return_value.execute.side_effect = _make_http_error(
+            500
         )
         with pytest.raises(FormCreationError):
             client.create_form({"title": "Test Form"})
@@ -239,8 +227,8 @@ class TestGetForm:
 
     def test_http_error_raises_api_error(self, client, mock_service) -> None:
         """An HttpError from forms().get() is wrapped in APIError."""
-        mock_service.forms.return_value.get.return_value.execute.side_effect = (
-            _make_http_error(404)
+        mock_service.forms.return_value.get.return_value.execute.side_effect = _make_http_error(
+            404
         )
         with pytest.raises(APIError):
             client.get_form("nonexistent")
@@ -256,15 +244,19 @@ class TestListResponses:
 
     def test_returns_all_responses_single_page(self, client, mock_service) -> None:
         """list_responses returns all responses from a single page."""
-        mock_service.forms.return_value.responses.return_value.list.return_value.execute.return_value = {
-            "responses": [{"responseId": "r1"}, {"responseId": "r2"}]
-        }
+        exec_mock = (
+            mock_service.forms.return_value.responses.return_value.list.return_value.execute
+        )
+        exec_mock.return_value = {"responses": [{"responseId": "r1"}, {"responseId": "r2"}]}
         results = client.list_responses("abc123")
         assert len(results) == 2
 
     def test_handles_empty_responses(self, client, mock_service) -> None:
         """list_responses returns an empty list when there are no responses."""
-        mock_service.forms.return_value.responses.return_value.list.return_value.execute.return_value = {}
+        exec_mock = (
+            mock_service.forms.return_value.responses.return_value.list.return_value.execute
+        )
+        exec_mock.return_value = {}
         results = client.list_responses("abc123")
         assert results == []
 
@@ -272,18 +264,17 @@ class TestListResponses:
         """list_responses follows nextPageToken across multiple pages."""
         page1 = {"responses": [{"responseId": "r1"}], "nextPageToken": "tok1"}
         page2 = {"responses": [{"responseId": "r2"}]}
-        mock_service.forms.return_value.responses.return_value.list.return_value.execute.side_effect = [
-            page1,
-            page2,
-        ]
+        responses_list = mock_service.forms.return_value.responses.return_value.list
+        responses_list.return_value.execute.side_effect = [page1, page2]
         results = client.list_responses("abc123")
         assert len(results) == 2
-        assert mock_service.forms.return_value.responses.return_value.list.call_count == 2
+        assert responses_list.call_count == 2
 
     def test_http_error_raises_api_error(self, client, mock_service) -> None:
         """An HttpError from list() is wrapped in APIError."""
-        mock_service.forms.return_value.responses.return_value.list.return_value.execute.side_effect = (
-            _make_http_error(403)
+        exec_mock = (
+            mock_service.forms.return_value.responses.return_value.list.return_value.execute
         )
+        exec_mock.side_effect = _make_http_error(403)
         with pytest.raises(APIError):
             client.list_responses("abc123")
