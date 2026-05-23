@@ -153,6 +153,40 @@ class FormConfig:
 
 
 @dataclass
+class UpdateFormConfig:
+    """Configuration for updating an existing Google Form.
+
+    All fields are optional.  Only the fields that are set will be changed
+    in the live form; fields left as ``None`` are left untouched.
+
+    Example::
+
+        from gformlib.models import UpdateFormConfig, QuestionConfig, QuestionType
+
+        update = UpdateFormConfig(
+            title="Revised Survey",
+            description="Updated description.",
+            add_questions=[
+                QuestionConfig(
+                    title="New question",
+                    question_type=QuestionType.SHORT_ANSWER,
+                    required=True,
+                ),
+            ],
+        )
+    """
+
+    title: Optional[str] = None
+    """New title for the form.  ``None`` leaves the title unchanged."""
+
+    description: Optional[str] = None
+    """New description for the form.  ``None`` leaves it unchanged."""
+
+    add_questions: List[QuestionConfig] = field(default_factory=list)
+    """Questions to append after the existing items in the form."""
+
+
+@dataclass
 class FormInfo:
     """Metadata about a Google Form that has been created via the API.
 

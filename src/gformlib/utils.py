@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Any, Dict, List
 
 from .exceptions import InvalidConfigError
-from .models import FormConfig, QuestionConfig, QuestionType
+from .models import FormConfig, QuestionConfig, QuestionType, UpdateFormConfig
 
 #: Question types that require an ``options`` list.
 _CHOICE_TYPES: frozenset[QuestionType] = frozenset(
@@ -170,4 +170,59 @@ def parse_form_config(data: Dict[str, Any]) -> FormConfig:
         document_title=data.get("document_title") or str(data["title"]).strip(),
         description=data.get("description"),
         questions=questions,
+    )
+
+
+def parse_update_config(data: Dict[str, Any]) -> UpdateFormConfig:
+    """Parse and validate a form update configuration dict.
+
+    All keys are optional.  At least one of ``title``, ``description``, or
+    ``add_questions`` should normally be present, though an empty update is
+    accepted (it simply returns the current form state unchanged).
+
+    Args:
+        data: Raw update configuration dict.  Recognised keys:
+
+            * ``"title"`` *(str)* – new form title.
+            * ``"description"`` *(str)* – new form description.
+            * ``"add_questions"`` *(list)* – question dicts to append
+              (same format as in :func:`parse_form_config`).
+
+    Returns:
+        A validated :class:`~gformlib.models.UpdateFormConfig` instance.
+
+    Raises:
+        InvalidConfigError: If ``add_questions`` is present but not a list,
+            or if any individual question dict is invalid.
+        TypeError: If *data* is not a dict.
+
+    Example::
+
+        from gformlib.utils import parse_update_config
+
+        cfg = parse_update_config(
+            {
+                "title": "Revised Survey",
+                "add_questions": [
+                    {"title": "Comments", "type": "paragraph"},
+                ],
+            }
+        )
+    """
+    if not isinstance(data, dict):
+        raise TypeError(f"Update configuration must be a dict, got {type(data).__name__}.")
+
+    raw_questions: List[Dict[str, Any]] = data.get("add_questions") or []
+    if not isinstance(raw_questions, list):
+        raise InvalidConfigError(
+            "'add_questions' must be a list.",
+            field="add_questions",
+        )
+
+    questions = [parse_question(q, i) for i, q in enumerate(raw_questions)]
+
+    return UpdateFormConfig(
+        title=str(data["title"]).strip() if data.get("title") else None,
+        description=data.get("description"),
+        add_questions=questions,
     )
