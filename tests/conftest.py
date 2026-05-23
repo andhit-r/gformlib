@@ -7,8 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from gformlib.models import FormConfig, QuestionConfig, QuestionType
-
+from gformlib.models import FormConfig
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Config fixtures

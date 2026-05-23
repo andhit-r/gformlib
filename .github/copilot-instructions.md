@@ -5,6 +5,20 @@
 **JANGAN PERNAH** menjalankan `git push` atau `git tag` secara mandiri.
 Selalu minta user untuk konfirmasi dan gunakan urutan berikut.
 
+### Aturan wajib — PR dulu, bukan push langsung ke master
+
+Setiap perubahan **wajib melalui Pull Request**. Jangan pernah push langsung ke `master`.
+
+Alurnya:
+1. Buat branch: `git checkout -b <nama-branch>`
+2. Commit perubahan di branch tersebut
+3. Push branch: `git push origin <nama-branch>`
+4. Buat PR ke master: `gh pr create --base master --title "..." --body "..."`
+5. User review & merge PR di GitHub
+6. Setelah PR merged, baru buat tag dan push tag
+
+**Exception:** Push langsung ke `master` hanya boleh untuk commit pertama (initial commit) jika remote masih kosong.
+
 ### Urutan wajib sebelum push:
 
 1. Pastikan semua test lulus:

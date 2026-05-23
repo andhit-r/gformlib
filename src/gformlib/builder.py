@@ -117,9 +117,7 @@ class FormBuilder:
             }
         }
 
-    def _build_create_item_request(
-        self, question: QuestionConfig, index: int
-    ) -> Dict[str, Any]:
+    def _build_create_item_request(self, question: QuestionConfig, index: int) -> Dict[str, Any]:
         """Return a ``createItem`` request for a single question.
 
         Args:

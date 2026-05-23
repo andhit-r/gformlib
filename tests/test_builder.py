@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-import pytest
-
 from gformlib.builder import FormBuilder
 from gformlib.models import FormConfig, QuestionConfig, QuestionType
 
@@ -120,9 +118,7 @@ class TestBuildQuestionBodies:
 
     def test_paragraph(self) -> None:
         """PARAGRAPH maps to textQuestion with paragraph=True."""
-        body = self._question_body(
-            QuestionConfig(title="Q", question_type=QuestionType.PARAGRAPH)
-        )
+        body = self._question_body(QuestionConfig(title="Q", question_type=QuestionType.PARAGRAPH))
         assert body["textQuestion"] == {"paragraph": True}
 
     def test_multiple_choice(self) -> None:
@@ -173,9 +169,7 @@ class TestBuildQuestionBodies:
 
     def test_scale_defaults(self) -> None:
         """SCALE uses default low/high values."""
-        body = self._question_body(
-            QuestionConfig(title="Q", question_type=QuestionType.SCALE)
-        )
+        body = self._question_body(QuestionConfig(title="Q", question_type=QuestionType.SCALE))
         assert body["scaleQuestion"]["low"] == 1
         assert body["scaleQuestion"]["high"] == 5
 
@@ -194,42 +188,32 @@ class TestBuildQuestionBodies:
 
     def test_scale_without_labels(self) -> None:
         """SCALE omits lowLabel/highLabel when not set."""
-        body = self._question_body(
-            QuestionConfig(title="Q", question_type=QuestionType.SCALE)
-        )
+        body = self._question_body(QuestionConfig(title="Q", question_type=QuestionType.SCALE))
         assert "lowLabel" not in body["scaleQuestion"]
         assert "highLabel" not in body["scaleQuestion"]
 
     def test_date_default_flags(self) -> None:
         """DATE defaults to includeTime=False, includeYear=True."""
-        body = self._question_body(
-            QuestionConfig(title="Q", question_type=QuestionType.DATE)
-        )
+        body = self._question_body(QuestionConfig(title="Q", question_type=QuestionType.DATE))
         assert body["dateQuestion"]["includeTime"] is False
         assert body["dateQuestion"]["includeYear"] is True
 
     def test_date_with_time(self) -> None:
         """DATE respects include_time=True."""
         body = self._question_body(
-            QuestionConfig(
-                title="Q", question_type=QuestionType.DATE, include_time=True
-            )
+            QuestionConfig(title="Q", question_type=QuestionType.DATE, include_time=True)
         )
         assert body["dateQuestion"]["includeTime"] is True
 
     def test_time_default(self) -> None:
         """TIME defaults to duration=False."""
-        body = self._question_body(
-            QuestionConfig(title="Q", question_type=QuestionType.TIME)
-        )
+        body = self._question_body(QuestionConfig(title="Q", question_type=QuestionType.TIME))
         assert body["timeQuestion"]["duration"] is False
 
     def test_time_duration(self) -> None:
         """TIME respects is_duration=True."""
         body = self._question_body(
-            QuestionConfig(
-                title="Q", question_type=QuestionType.TIME, is_duration=True
-            )
+            QuestionConfig(title="Q", question_type=QuestionType.TIME, is_duration=True)
         )
         assert body["timeQuestion"]["duration"] is True
 

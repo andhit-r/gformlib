@@ -45,7 +45,6 @@ Example::
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 from typing import Any, Dict, List, Optional, Union
@@ -249,23 +248,17 @@ class GoogleFormsClient:
         credentials: Optional[Credentials] = None
         if os.path.exists(_token_path):
             try:
-                credentials = Credentials.from_authorized_user_file(
-                    _token_path, _scopes
-                )
+                credentials = Credentials.from_authorized_user_file(_token_path, _scopes)
             except Exception:
                 logger.debug("Token file '%s' could not be loaded; re-authorising.", _token_path)
                 credentials = None
 
         if not credentials or not credentials.valid:
             try:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    str(client_secrets_file), _scopes
-                )
+                flow = InstalledAppFlow.from_client_secrets_file(str(client_secrets_file), _scopes)
                 credentials = flow.run_local_server(port=0)
             except Exception as exc:
-                raise AuthenticationError(
-                    f"OAuth flow failed: {exc}"
-                ) from exc
+                raise AuthenticationError(f"OAuth flow failed: {exc}") from exc
             try:
                 with open(_token_path, "w") as token_fh:
                     token_fh.write(credentials.to_json())
@@ -283,7 +276,8 @@ class GoogleFormsClient:
         self,
         config: Union[Dict[str, Any], FormConfig],
     ) -> FormInfo:
-        """Create a new Google Form from a configuration dict or :class:`~gformlib.models.FormConfig`.
+        """Create a new Google Form from a configuration dict or
+        :class:`~gformlib.models.FormConfig`.
 
         This method:
 
@@ -329,9 +323,7 @@ class GoogleFormsClient:
         create_body = builder.build_create_body()
         logger.debug("Creating form with body: %s", create_body)
         try:
-            form_response = (
-                self._service.forms().create(body=create_body).execute()
-            )
+            form_response = self._service.forms().create(body=create_body).execute()
         except HttpError as exc:
             raise FormCreationError(
                 f"Failed to create form '{form_config.title}': {exc}",
@@ -349,11 +341,11 @@ class GoogleFormsClient:
         # Step 2 – add questions + description via batchUpdate
         batch_body = builder.build_batch_update_body()
         if batch_body.get("requests"):
-            logger.debug("Updating form '%s' with %d request(s).", form_id, len(batch_body["requests"]))
+            logger.debug(
+                "Updating form '%s' with %d request(s).", form_id, len(batch_body["requests"])
+            )
             try:
-                self._service.forms().batchUpdate(
-                    formId=form_id, body=batch_body
-                ).execute()
+                self._service.forms().batchUpdate(formId=form_id, body=batch_body).execute()
             except HttpError as exc:
                 raise FormUpdateError(
                     f"Failed to add questions to form '{form_id}': {exc}",

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict
-
 import pytest
 
 from gformlib.exceptions import InvalidConfigError
@@ -40,16 +38,12 @@ class TestParseQuestion:
 
     def test_checkboxes_with_options(self) -> None:
         """Checkboxes question with options parses correctly."""
-        q = parse_question(
-            {"title": "Toppings", "type": "checkboxes", "options": ["A", "B"]}
-        )
+        q = parse_question({"title": "Toppings", "type": "checkboxes", "options": ["A", "B"]})
         assert q.question_type == QuestionType.CHECKBOXES
 
     def test_dropdown_with_options(self) -> None:
         """Dropdown question with options parses correctly."""
-        q = parse_question(
-            {"title": "Size", "type": "dropdown", "options": ["S", "M", "L"]}
-        )
+        q = parse_question({"title": "Size", "type": "dropdown", "options": ["S", "M", "L"]})
         assert q.question_type == QuestionType.DROPDOWN
 
     def test_scale_defaults(self) -> None:
@@ -212,6 +206,4 @@ class TestParseFormConfig:
     def test_invalid_question_propagates(self) -> None:
         """An invalid question in the list propagates its error."""
         with pytest.raises(InvalidConfigError):
-            parse_form_config(
-                {"title": "T", "questions": [{"type": "short_answer"}]}
-            )
+            parse_form_config({"title": "T", "questions": [{"type": "short_answer"}]})
