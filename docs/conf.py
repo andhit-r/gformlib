@@ -19,14 +19,12 @@ version = "0.1"
 # ── Extensions ───────────────────────────────────────────────────────────────
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",  # Google / NumPy-style docstrings
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "myst_parser",
 ]
 
-autosummary_generate = True
 autodoc_member_order = "bysource"
 autodoc_typehints = "description"
 napoleon_google_docstring = True

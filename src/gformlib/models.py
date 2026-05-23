@@ -59,31 +59,6 @@ class QuestionType(str, Enum):
 class QuestionConfig:
     """Configuration for a single Google Form question.
 
-    Attributes:
-        title: The question text displayed to respondents.
-        question_type: The type of question (see :class:`QuestionType`).
-        required: Whether a response to this question is mandatory.
-            Defaults to ``False``.
-        description: Optional help text shown below the question title.
-        options: List of answer options for choice-type questions
-            (:attr:`~QuestionType.MULTIPLE_CHOICE`,
-            :attr:`~QuestionType.CHECKBOXES`,
-            :attr:`~QuestionType.DROPDOWN`).
-        shuffle_options: Randomise option order for respondents.
-            Defaults to ``False``.
-        low: Minimum value for :attr:`~QuestionType.SCALE` questions.
-            Defaults to ``1``.
-        high: Maximum value for :attr:`~QuestionType.SCALE` questions.
-            Defaults to ``5``.
-        low_label: Label shown at the low end of a scale.
-        high_label: Label shown at the high end of a scale.
-        include_time: Include a time picker in :attr:`~QuestionType.DATE`
-            questions. Defaults to ``False``.
-        include_year: Include year in :attr:`~QuestionType.DATE` questions.
-            Defaults to ``True``.
-        is_duration: Treat :attr:`~QuestionType.TIME` as a duration rather
-            than a time-of-day. Defaults to ``False``.
-
     Example::
 
         from gformlib.models import QuestionConfig, QuestionType
@@ -147,13 +122,6 @@ class QuestionConfig:
 class FormConfig:
     """Configuration for a complete Google Form.
 
-    Attributes:
-        title: The title shown to respondents at the top of the form.
-        questions: Ordered list of :class:`QuestionConfig` objects.
-        document_title: Title of the backing Google Docs document.
-            Defaults to *title* when ``None``.
-        description: Optional description displayed below the form title.
-
     Example::
 
         from gformlib.models import FormConfig, QuestionConfig, QuestionType
@@ -190,15 +158,6 @@ class FormInfo:
 
     Instances of this class are returned by
     :meth:`~gformlib.client.GoogleFormsClient.create_form`.
-
-    Attributes:
-        form_id: Unique identifier of the form (used in all API calls).
-        title: Displayed title of the form.
-        document_title: Title of the backing Google Docs document.
-        responder_uri: URL to share with respondents.
-        linked_sheet_id: ID of the linked Google Sheet, if any.
-        revision_id: Revision ID of the form at the time of creation.
-        raw: Raw JSON response from the API (not displayed in ``repr``).
 
     Example::
 
