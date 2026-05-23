@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath("../src"))
 project = "gformlib"
 copyright = "2024, Andhitia Rama"
 author = "Andhitia Rama"
-release = "0.1.0"
+release = "0.1.1"
 version = "0.1"
 
 # ── Extensions ───────────────────────────────────────────────────────────────

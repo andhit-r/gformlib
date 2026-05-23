@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gformlib"
-version = "0.1.0"
+version = "0.1.1"
 description = "Create and manage Google Forms from JSON using the official Google Forms API."
 readme = "README.md"
 license = { file = "LICENSE" }
