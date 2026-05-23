@@ -1,11 +1,11 @@
 name: Publish to PyPI
 
 on:
-  # Trigger on a published GitHub release (tag vX.Y.Z)
-  release:
-    types: [published]
+  # Auto-publish to PyPI when a vX.Y.Z tag is pushed
+  push:
+    tags: ["v*.*.*"]
 
-  # Allow manual trigger from the Actions tab
+  # Allow manual trigger from the Actions tab (e.g. for TestPyPI)
   workflow_dispatch:
     inputs:
       environment:
@@ -80,7 +80,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: >
-      github.event_name == 'release' ||
+      github.event_name == 'push' ||
       (github.event_name == 'workflow_dispatch' &&
        github.event.inputs.environment == 'pypi')
     environment:
