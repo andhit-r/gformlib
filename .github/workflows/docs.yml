@@ -22,26 +22,24 @@ on:
 
 jobs:
   trigger-rtd:
-    name: Trigger ReadTheDocs webhook
+    name: Trigger ReadTheDocs build
     runs-on: ubuntu-latest
 
     steps:
       - name: Trigger ReadTheDocs build via API
-        # RTD_WEBHOOK_TOKEN must be stored as a repository secret.
-        # Obtain it from:
-        #   ReadTheDocs dashboard → your project → Admin → Integrations
-        #   → Add integration → GitHub incoming webhook → copy the token.
+        # RTD_TOKEN must be stored as a repository secret.
+        # Obtain it from: https://readthedocs.org/accounts/tokens/
         env:
-          RTD_WEBHOOK_URL: ${{ secrets.RTD_WEBHOOK_URL }}
-          RTD_WEBHOOK_TOKEN: ${{ secrets.RTD_WEBHOOK_TOKEN }}
+          RTD_TOKEN: ${{ secrets.RTD_TOKEN }}
         run: |
-          if [ -z "$RTD_WEBHOOK_URL" ] || [ -z "$RTD_WEBHOOK_TOKEN" ]; then
-            echo "::warning::RTD_WEBHOOK_URL or RTD_WEBHOOK_TOKEN not set – skipping trigger."
+          if [ -z "$RTD_TOKEN" ]; then
+            echo "::warning::RTD_TOKEN not set – skipping trigger."
             exit 0
           fi
-          curl -X POST \
-            -d "token=${RTD_WEBHOOK_TOKEN}" \
-            "${RTD_WEBHOOK_URL}"
+          curl -s -X POST \
+            -H "Authorization: Token ${RTD_TOKEN}" \
+            -H "Content-Type: application/json" \
+            https://readthedocs.org/api/v3/projects/gformlib/versions/latest/builds/
 
   build-docs-check:
     name: Verify Sphinx build

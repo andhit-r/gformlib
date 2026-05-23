@@ -45,3 +45,5 @@ Selalu minta user untuk konfirmasi dan gunakan urutan berikut.
 - Semua pipeline hanya berjalan saat tag `vX.Y.Z` di-push — tidak ada auto-build di setiap commit.
 - Untuk publish ke PyPI, buat **GitHub Release** dari tag yang sudah ada di GitHub.
 - Untuk publish ke TestPyPI, gunakan manual workflow dispatch di tab Actions.
+- `docs.yml` trigger build RTD via API (`RTD_TOKEN` secret) — bukan webhook.
+- RTD token disimpan sebagai GitHub secret `RTD_TOKEN`, bukan `RTD_WEBHOOK_TOKEN`.
