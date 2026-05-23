@@ -1,0 +1,96 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gformlib"
+version = "0.1.0"
+description = "Create and manage Google Forms from JSON using the official Google Forms API."
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Andhitia Rama", email = "andhitia.r@gmail.com" }]
+keywords = ["google", "forms", "api", "survey", "automation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "google-api-python-client>=2.100.0",
+    "google-auth>=2.23.0",
+    "google-auth-oauthlib>=1.1.0",
+    "google-auth-httplib2>=0.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "pytest-mock>=3.11",
+    "black>=23.0",
+    "isort>=5.12",
+    "mypy>=1.5",
+    "types-google-cloud-ndb",
+    "flake8>=6.1",
+    "tox>=4.11",
+]
+docs = [
+    "sphinx>=7.1",
+    "sphinx-rtd-theme>=1.3",
+    "sphinxcontrib-httpdomain>=1.8",
+    "myst-parser>=2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/andhit-r/gformlib"
+Documentation = "https://gformlib.readthedocs.io"
+Repository = "https://github.com/andhit-r/gformlib"
+"Bug Tracker" = "https://github.com/andhit-r/gformlib/issues"
+Changelog = "https://github.com/andhit-r/gformlib/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+gformlib = ["py.typed"]
+
+# ── Black ────────────────────────────────────────────────────────────────────
+[tool.black]
+line-length = 99
+target-version = ["py39", "py310", "py311", "py312"]
+
+# ── isort ────────────────────────────────────────────────────────────────────
+[tool.isort]
+profile = "black"
+line_length = 99
+src_paths = ["src", "tests"]
+
+# ── pytest ───────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+# ── coverage ─────────────────────────────────────────────────────────────────
+[tool.coverage.run]
+source = ["src/gformlib"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 80
+
+# ── mypy ─────────────────────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.9"
+strict = true
+ignore_missing_imports = true

@@ -1,0 +1,67 @@
+name: Trigger ReadTheDocs Build
+
+# ReadTheDocs automatically builds on every push via its own webhook.
+# This workflow provides an explicit trigger with status visibility in
+# the GitHub Actions tab and supports manual/scheduled re-builds.
+
+on:
+  push:
+    tags: ["v*.*.*"]
+    paths:
+      - "docs/**"
+      - "src/**"
+      - ".readthedocs.yaml"
+      - "pyproject.toml"
+
+  # Allow manual trigger from the Actions tab
+  workflow_dispatch:
+
+  # Weekly scheduled build to keep docs fresh
+  schedule:
+    - cron: "0 3 * * 1"   # Every Monday at 03:00 UTC
+
+jobs:
+  trigger-rtd:
+    name: Trigger ReadTheDocs webhook
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger ReadTheDocs build via API
+        # RTD_WEBHOOK_TOKEN must be stored as a repository secret.
+        # Obtain it from:
+        #   ReadTheDocs dashboard → your project → Admin → Integrations
+        #   → Add integration → GitHub incoming webhook → copy the token.
+        env:
+          RTD_WEBHOOK_URL: ${{ secrets.RTD_WEBHOOK_URL }}
+          RTD_WEBHOOK_TOKEN: ${{ secrets.RTD_WEBHOOK_TOKEN }}
+        run: |
+          if [ -z "$RTD_WEBHOOK_URL" ] || [ -z "$RTD_WEBHOOK_TOKEN" ]; then
+            echo "::warning::RTD_WEBHOOK_URL or RTD_WEBHOOK_TOKEN not set – skipping trigger."
+            exit 0
+          fi
+          curl -X POST \
+            -d "token=${RTD_WEBHOOK_TOKEN}" \
+            "${RTD_WEBHOOK_URL}"
+
+  build-docs-check:
+    name: Verify Sphinx build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install docs dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[docs]"
+
+      - name: Build Sphinx documentation
+        run: |
+          sphinx-build -W -b html docs docs/_build/html
