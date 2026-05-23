@@ -278,3 +278,144 @@ class TestListResponses:
         exec_mock.side_effect = _make_http_error(403)
         with pytest.raises(APIError):
             client.list_responses("abc123")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# update_form
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestUpdateForm:
+    """Tests for :meth:`GoogleFormsClient.update_form`."""
+
+    _UPDATED_FORM = {
+        "formId": "abc123",
+        "info": {"title": "Revised Survey", "documentTitle": "Revised Survey"},
+        "responderUri": "https://docs.google.com/forms/d/abc123/viewform",
+        "revisionId": "rev2",
+    }
+
+    def _setup_get(self, mock_service, response: dict) -> None:
+        mock_service.forms.return_value.get.return_value.execute.return_value = response
+
+    def _setup_batch(self, mock_service, response: dict) -> None:
+        mock_service.forms.return_value.batchUpdate.return_value.execute.return_value = response
+
+    # ------------------------------------------------------------------
+    # Title / description only (no get() pre-fetch needed)
+    # ------------------------------------------------------------------
+
+    def test_update_title_returns_form_info(self, client, mock_service) -> None:
+        """Updating only the title issues batchUpdate and returns FormInfo."""
+        self._setup_batch(mock_service, {"form": self._UPDATED_FORM, "replies": []})
+        info = client.update_form("abc123", {"title": "Revised Survey"})
+        assert isinstance(info, FormInfo)
+        assert info.title == "Revised Survey"
+
+    def test_update_description_returns_form_info(self, client, mock_service) -> None:
+        """Updating only the description issues batchUpdate and returns FormInfo."""
+        updated = dict(self._UPDATED_FORM)
+        updated["info"] = dict(updated["info"])
+        updated["info"]["description"] = "New desc"
+        self._setup_batch(mock_service, {"form": updated, "replies": []})
+        info = client.update_form("abc123", {"description": "New desc"})
+        assert isinstance(info, FormInfo)
+
+    def test_batch_update_called_once_for_title_only(self, client, mock_service) -> None:
+        """batchUpdate is called exactly once; get() is NOT called for title-only update."""
+        self._setup_batch(mock_service, {"form": self._UPDATED_FORM, "replies": []})
+        client.update_form("abc123", {"title": "New Title"})
+        mock_service.forms.return_value.batchUpdate.assert_called_once()
+        mock_service.forms.return_value.get.assert_not_called()
+
+    # ------------------------------------------------------------------
+    # Adding questions (requires pre-fetch to compute start_index)
+    # ------------------------------------------------------------------
+
+    def test_add_questions_prefetches_form(self, client, mock_service) -> None:
+        """update_form calls get() to determine start_index when adding questions."""
+        current = {"formId": "abc123", "items": [{"itemId": "item1"}]}
+        self._setup_get(mock_service, current)
+        self._setup_batch(mock_service, {"form": self._UPDATED_FORM, "replies": []})
+        client.update_form(
+            "abc123",
+            {"add_questions": [{"title": "New Q", "type": "short_answer"}]},
+        )
+        mock_service.forms.return_value.get.assert_called_once()
+        mock_service.forms.return_value.batchUpdate.assert_called_once()
+
+    def test_add_questions_start_index_correct(self, client, mock_service) -> None:
+        """createItem index starts after existing items."""
+        current = {"formId": "abc123", "items": [{"itemId": "i1"}, {"itemId": "i2"}]}
+        self._setup_get(mock_service, current)
+        self._setup_batch(mock_service, {"form": self._UPDATED_FORM, "replies": []})
+        client.update_form(
+            "abc123",
+            {"add_questions": [{"title": "Q", "type": "short_answer"}]},
+        )
+        call_kwargs = mock_service.forms.return_value.batchUpdate.call_args
+        body = call_kwargs[1]["body"] if call_kwargs[1] else call_kwargs[0][1]
+        create_req = body["requests"][-1]["createItem"]
+        assert create_req["location"]["index"] == 2  # after 2 existing items
+
+    def test_accepts_update_form_config_object(self, client, mock_service) -> None:
+        """update_form accepts an UpdateFormConfig object directly."""
+        from gformlib.models import UpdateFormConfig
+
+        self._setup_batch(mock_service, {"form": self._UPDATED_FORM, "replies": []})
+        cfg = UpdateFormConfig(title="Revised Survey")
+        info = client.update_form("abc123", cfg)
+        assert isinstance(info, FormInfo)
+
+    # ------------------------------------------------------------------
+    # Empty update (no changes)
+    # ------------------------------------------------------------------
+
+    def test_empty_update_returns_current_form(self, client, mock_service) -> None:
+        """An empty config dict returns the current form without calling batchUpdate."""
+        self._setup_get(mock_service, self._UPDATED_FORM)
+        info = client.update_form("abc123", {})
+        mock_service.forms.return_value.batchUpdate.assert_not_called()
+        assert isinstance(info, FormInfo)
+
+    # ------------------------------------------------------------------
+    # Fallback when batchUpdate response lacks form field
+    # ------------------------------------------------------------------
+
+    def test_fallback_get_when_batch_response_incomplete(self, client, mock_service) -> None:
+        """Falls back to get() when batchUpdate response has no 'form' key."""
+        self._setup_batch(mock_service, {"replies": []})  # no "form" key
+        self._setup_get(mock_service, self._UPDATED_FORM)
+        info = client.update_form("abc123", {"title": "New Title"})
+        mock_service.forms.return_value.get.assert_called_once()
+        assert isinstance(info, FormInfo)
+
+    # ------------------------------------------------------------------
+    # Error paths
+    # ------------------------------------------------------------------
+
+    def test_invalid_config_raises(self, client) -> None:
+        """An invalid add_questions entry raises InvalidConfigError."""
+        with pytest.raises(InvalidConfigError):
+            client.update_form("abc123", {"add_questions": [{"type": "short_answer"}]})
+
+    def test_http_error_on_batch_update_raises_form_update_error(
+        self, client, mock_service
+    ) -> None:
+        """An HttpError from batchUpdate is wrapped in FormUpdateError."""
+        mock_service.forms.return_value.batchUpdate.return_value.execute.side_effect = (
+            _make_http_error(500)
+        )
+        with pytest.raises(FormUpdateError):
+            client.update_form("abc123", {"title": "New Title"})
+
+    def test_http_error_on_prefetch_raises_api_error(self, client, mock_service) -> None:
+        """An HttpError while pre-fetching form (for start_index) raises APIError."""
+        mock_service.forms.return_value.get.return_value.execute.side_effect = _make_http_error(
+            403
+        )
+        with pytest.raises(APIError):
+            client.update_form(
+                "abc123",
+                {"add_questions": [{"title": "Q", "type": "short_answer"}]},
+            )

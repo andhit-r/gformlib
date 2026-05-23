@@ -57,8 +57,8 @@ from googleapiclient.errors import HttpError
 
 from .builder import FormBuilder
 from .exceptions import APIError, AuthenticationError, FormCreationError, FormUpdateError
-from .models import FormConfig, FormInfo
-from .utils import parse_form_config
+from .models import FormConfig, FormInfo, UpdateFormConfig
+from .utils import parse_form_config, parse_update_config
 
 logger = logging.getLogger(__name__)
 
@@ -357,6 +357,126 @@ class GoogleFormsClient:
                     form_id=form_id,
                 ) from exc
 
+        return self._parse_form_info(form_response)
+
+    def update_form(
+        self,
+        form_id: str,
+        config: Union[Dict[str, Any], UpdateFormConfig],
+    ) -> FormInfo:
+        """Update an existing Google Form.
+
+        Modifies the title, description, and/or appends new questions to an
+        existing form identified by *form_id*.  Only the fields explicitly set
+        in *config* are changed; everything else is left untouched.
+
+        This method:
+
+        1. Validates *config* (if it is a dict) with
+           :func:`~gformlib.utils.parse_update_config`.
+        2. If new questions are being added, calls ``forms().get()`` first to
+           determine the current item count so that questions are appended at
+           the correct position.
+        3. Calls ``forms().batchUpdate()`` with the generated request list.
+        4. Returns a :class:`~gformlib.models.FormInfo` reflecting the
+           updated form state.
+
+        Args:
+            form_id: The ID of the form to update.
+            config: Either a raw update configuration dict or a pre-built
+                :class:`~gformlib.models.UpdateFormConfig` object.
+
+                Recognised dict keys:
+
+                * ``"title"`` *(str)* – new form title.
+                * ``"description"`` *(str)* – new form description.
+                * ``"add_questions"`` *(list)* – question dicts to append.
+
+        Returns:
+            A :class:`~gformlib.models.FormInfo` with the updated metadata.
+
+        Raises:
+            InvalidConfigError: If *config* fails validation.
+            APIError: If the ``forms().get()`` call to fetch the current
+                form state fails.
+            FormUpdateError: If the ``forms().batchUpdate()`` call fails.
+
+        Example::
+
+            info = client.update_form(
+                "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms",
+                {
+                    "title": "Revised Survey",
+                    "add_questions": [
+                        {"title": "Any comments?", "type": "paragraph"},
+                    ],
+                },
+            )
+            print(info.title)
+        """
+        if isinstance(config, dict):
+            update_config: UpdateFormConfig = parse_update_config(config)
+        else:
+            update_config = config
+
+        # If questions are being added, get the current item count so that
+        # new questions are appended after existing ones.
+        start_index: int = 0
+        if update_config.add_questions:
+            try:
+                current_form = self._service.forms().get(formId=form_id).execute()
+                start_index = len(current_form.get("items", []))
+            except HttpError as exc:
+                raise APIError(
+                    f"Failed to fetch form '{form_id}' before update: {exc}",
+                    status_code=exc.status_code,
+                ) from exc
+
+        batch_body = FormBuilder.build_update_body(update_config, start_index=start_index)
+
+        if not batch_body.get("requests"):
+            # Nothing to update – just return the current form state.
+            logger.debug("update_form called with no changes for form '%s'.", form_id)
+            try:
+                form_response = self._service.forms().get(formId=form_id).execute()
+            except HttpError as exc:
+                raise APIError(
+                    f"Failed to get form '{form_id}': {exc}",
+                    status_code=exc.status_code,
+                ) from exc
+            return self._parse_form_info(form_response)
+
+        logger.debug(
+            "Updating form '%s' with %d request(s).", form_id, len(batch_body["requests"])
+        )
+        try:
+            update_response = (
+                self._service.forms().batchUpdate(formId=form_id, body=batch_body).execute()
+            )
+        except HttpError as exc:
+            raise FormUpdateError(
+                f"Failed to update form '{form_id}': {exc}",
+                form_id=form_id,
+            ) from exc
+        except Exception as exc:
+            raise FormUpdateError(
+                f"Unexpected error updating form '{form_id}': {exc}",
+                form_id=form_id,
+            ) from exc
+
+        # batchUpdate returns {"form": <FormResponse>, "replies": [...]}
+        form_response = update_response.get("form") or {}
+        if not form_response.get("formId"):
+            # Fall back to an explicit get when the response is incomplete.
+            try:
+                form_response = self._service.forms().get(formId=form_id).execute()
+            except HttpError as exc:
+                raise APIError(
+                    f"Failed to get form '{form_id}' after update: {exc}",
+                    status_code=exc.status_code,
+                ) from exc
+
+        logger.info("Form '%s' updated successfully.", form_id)
         return self._parse_form_info(form_response)
 
     def get_form(self, form_id: str) -> Dict[str, Any]:

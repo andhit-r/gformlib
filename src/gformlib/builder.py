@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from .models import FormConfig, QuestionConfig, QuestionType
+from .models import FormConfig, QuestionConfig, QuestionType, UpdateFormConfig
 
 
 class FormBuilder:
@@ -97,6 +97,82 @@ class FormBuilder:
 
         for index, question in enumerate(self._config.questions):
             requests.append(self._build_create_item_request(question, index))
+
+        return {"requests": requests}
+
+    @classmethod
+    def build_update_body(
+        cls,
+        update_config: UpdateFormConfig,
+        start_index: int = 0,
+    ) -> Dict[str, Any]:
+        """Build a ``batchUpdate`` request body for updating an existing form.
+
+        Constructs a list of API requests based on what is set in
+        *update_config*:
+
+        * If :attr:`~gformlib.models.UpdateFormConfig.title` is set, an
+          ``updateFormInfo`` request with mask ``"title"`` is included.
+        * If :attr:`~gformlib.models.UpdateFormConfig.description` is set,
+          an ``updateFormInfo`` request with mask ``"description"`` is
+          included (combined with the title mask when both are provided).
+        * Each question in
+          :attr:`~gformlib.models.UpdateFormConfig.add_questions` generates
+          a ``createItem`` request positioned after the existing items
+          (controlled by *start_index*).
+
+        Args:
+            update_config: The validated update configuration.
+            start_index: Zero-based index of the first new item.  Pass the
+                current number of items in the form so that new questions
+                are appended at the end.  Defaults to ``0``.
+
+        Returns:
+            A dict suitable for ``service.forms().batchUpdate(body=...)``.
+            Returns ``{"requests": []}`` when *update_config* contains no
+            changes.
+
+        Example::
+
+            body = FormBuilder.build_update_body(
+                UpdateFormConfig(title="New Title"),
+            )
+            # {"requests": [{"updateFormInfo": {"info": {"title": "New Title"},
+            #                                   "updateMask": "title"}}]}
+        """
+        requests: List[Dict[str, Any]] = []
+
+        # --- Info update (title and/or description) -----------------------
+        info: Dict[str, Any] = {}
+        masks: List[str] = []
+
+        if update_config.title is not None:
+            info["title"] = update_config.title
+            masks.append("title")
+
+        if update_config.description is not None:
+            info["description"] = update_config.description
+            masks.append("description")
+
+        if masks:
+            requests.append(
+                {
+                    "updateFormInfo": {
+                        "info": info,
+                        "updateMask": ",".join(masks),
+                    }
+                }
+            )
+
+        # --- Append new questions -----------------------------------------
+        # Use a temporary builder instance to reuse the existing question
+        # serialisation logic without duplicating it.
+        if update_config.add_questions:
+            _builder = cls(FormConfig(title="", questions=update_config.add_questions))
+            for offset, question in enumerate(update_config.add_questions):
+                requests.append(
+                    _builder._build_create_item_request(question, start_index + offset)
+                )
 
         return {"requests": requests}
 

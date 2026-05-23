@@ -39,8 +39,8 @@ from .exceptions import (
     GFormLibError,
     InvalidConfigError,
 )
-from .models import FormConfig, FormInfo, QuestionConfig, QuestionType
-from .utils import parse_form_config, parse_question
+from .models import FormConfig, FormInfo, QuestionConfig, QuestionType, UpdateFormConfig
+from .utils import parse_form_config, parse_question, parse_update_config
 
 __all__ = [
     # Client
@@ -53,9 +53,11 @@ __all__ = [
     "FormInfo",
     "QuestionConfig",
     "QuestionType",
+    "UpdateFormConfig",
     # Utils
     "parse_form_config",
     "parse_question",
+    "parse_update_config",
     # Exceptions
     "GFormLibError",
     "AuthenticationError",
@@ -65,6 +67,6 @@ __all__ = [
     "APIError",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Andhitia Rama"
 __email__ = "andhitia.r@gmail.com"

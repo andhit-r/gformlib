@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] – 2026-05-23
+
+### Added
+- `update_form` – update an existing Google Form's title, description,
+  and/or append new questions via `forms().batchUpdate()`.
+- `UpdateFormConfig` dataclass for declaring update parameters.
+- `parse_update_config` utility for validating a raw update dict.
+- `FormBuilder.build_update_body` classmethod for building batchUpdate
+  request bodies for form updates.
+
 ## [0.1.0] – 2024-05-23
 
 ### Added
@@ -25,5 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions: test, publish to PyPI, build GHCR image, ReadTheDocs docs trigger.
 - Sphinx documentation with ReadTheDocs theme.
 
-[Unreleased]: https://github.com/andhit-r/gformlib/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/andhit-r/gformlib/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/andhit-r/gformlib/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/andhit-r/gformlib/releases/tag/v0.1.0
